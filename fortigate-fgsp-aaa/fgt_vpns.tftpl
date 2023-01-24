@@ -1,0 +1,113 @@
+%{ for indx, peer_ip in vpn_peers }
+config vpn ipsec phase1-interface
+  edit "to-branch${indx+1}"
+    set interface "port1"
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set proposal aes128-sha256 aes256-sha256 aes128gcm-prfsha256 aes256gcm-prfsha384 chacha20poly1305-prfsha256 des-md5 des-sha1
+    set nattraversal forced
+    set remote-gw ${peer_ip}
+    set psksecret ${vpn_secret}
+    set passive-mode enable
+    set local-gw ${vpn_hub_ip}
+    set dpd on-idle
+    set dpd-retryinterval 30
+    set fgsp-sync enable
+  next
+end
+config vpn ipsec phase2-interface
+    edit "to-branch${indx+1}"
+        set phase1name "to-branch${indx+1}"
+        set proposal aes128-sha1 aes256-sha1 aes128-sha256 aes256-sha256 aes128gcm aes256gcm chacha20poly1305 des-md5 des-sha1
+    next
+end
+
+config sys interface
+  edit "to-branch${indx+1}"
+    set ip 169.254.${indx+1}.1 255.255.255.255
+    set allowaccess ping
+    set remote-ip 169.254.${indx+1}.2 255.255.255.252
+  next
+end
+
+config router bgp
+  config neighbor
+    edit 169.254.${indx+1}.2
+    set capability-graceful-restart enable
+    set soft-reconfiguration enable
+    set remote-as ${65101+indx}
+    next
+  end
+end
+%{ endfor }
+
+
+
+config firewall vip
+    edit "ssh-to-srv1"
+        set extip ${vpn_hub_ip}
+        set mappedip "10.0.1.10"
+        set extintf "port1"
+        set portforward enable
+        set extport 22
+        set mappedport 22
+    next
+end
+config firewall ippool
+    edit "eip-vpnhub"
+        set startip ${vpn_hub_ip}
+        set endip ${vpn_hub_ip}
+        set arp-reply disable
+    next
+end
+
+config firewall policy
+  edit 1
+    set name "allow-all-from-vpn"
+    set srcintf %{ for i, ip in vpn_peers ~} to-branch${i+1} %{ endfor }
+    set dstintf port3 port4 port5 port6
+    set action accept
+    set srcaddr "all"
+    set dstaddr "all"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+  next
+  edit 2
+    set name "allow-all-to-vpn"
+    set dstintf %{ for i, ip in vpn_peers ~} to-branch${i+1} %{ endfor }
+    set srcintf port3 port4 port5 port6
+    set action accept
+    set srcaddr "all"
+    set dstaddr "all"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+  next
+  edit 3
+    set name "allow-ssh-to-srv1"
+    set srcintf "port1"
+    set dstintf "port3"
+    set action accept
+    set srcaddr "all"
+    set dstaddr "ssh-to-srv1"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+  next
+  edit 4
+    set name "allow-out"
+    set srcintf port3 port4 port5 port6
+    set dstintf "port1"
+    set action accept
+    set srcaddr "all"
+    set dstaddr "all"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+    set nat enable
+    set ippool enable
+    set poolname "eip-vpnhub"
+  next
+end

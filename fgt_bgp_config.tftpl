@@ -1,0 +1,14 @@
+config router bgp
+  set as ${asn}
+  config neighbor
+    %{ for peer in bgp_neighbors ~}
+    edit ${peer.ip}
+      set capability-graceful-restart enable
+      set capability-default-originate enable
+      set ebgp-enforce-multihop enable
+      set soft-reconfiguration enable
+      set remote-as ${peer.asn}
+    next
+    %{ endfor ~}
+  end
+end

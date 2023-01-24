@@ -1,0 +1,95 @@
+Content-Type: multipart/mixed; boundary="12345"
+MIME-Version: 1.0
+
+--12345
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="config"
+
+config router static
+  edit 0
+  set device port1
+  set dst ${wrkld_cidr}
+  set gateway ${gw}
+  next
+end
+
+config vpn ipsec phase1-interface
+  edit "to-hub"
+    set interface "port1"
+    set ike-version 2
+    set peertype any
+    set net-device disable
+    set proposal aes128-sha256 aes256-sha256 aes128gcm-prfsha256 aes256gcm-prfsha384 chacha20poly1305-prfsha256
+    set nattraversal forced
+    set remote-gw ${vpn_hub_ip}
+    set psksecret ${vpn_secret}
+  next
+end
+config vpn ipsec phase2-interface
+    edit "to-hub"
+        set phase1name "to-hub"
+        set proposal aes128-sha1 aes256-sha1 aes128-sha256 aes256-sha256 aes128gcm aes256gcm chacha20poly1305
+    next
+end
+
+config sys interface
+  edit "to-hub"
+    set ip ${bgp_local169} 255.255.255.255
+    set allowaccess ping
+    set remote-ip ${bgp_remote169} 255.255.255.252
+  next
+end
+
+config router bgp
+  set as ${bgp_as}
+  config neighbor
+    edit ${bgp_remote169}
+    set capability-graceful-restart enable
+    set soft-reconfiguration enable
+    set remote-as ${bgp_hub_as}
+    next
+  end
+  config network
+    edit 0
+      set prefix ${wrkld_cidr}
+    next
+  end
+end
+
+config firewall policy
+  edit 1
+    set name "allow-all-to-hub"
+    set srcintf "port1"
+    set dstintf "to-hub"
+    set action accept
+    set srcaddr "all"
+    set dstaddr "all"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+  next
+  edit 1
+    set name "allow-all-from-hub"
+    set srcintf "to-hub"
+    set dstintf "port1"
+    set action accept
+    set srcaddr "all"
+    set dstaddr "all"
+    set schedule "always"
+    set service "ALL"
+    set logtraffic all
+  next
+end
+
+--12345
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="license"
+
+
+LICENSE-TOKEN: ${flexvm_token}
+
+--12345--
