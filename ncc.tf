@@ -68,7 +68,8 @@ resource "google_compute_router_peer" "prod" {
 
   depends_on = [
     google_compute_router_interface.prod0,
-    google_compute_router_interface.prod1
+    google_compute_router_interface.prod1,
+    google_network_connectivity_spoke.prod
   ]
 }
 
@@ -141,7 +142,8 @@ resource "google_compute_router_peer" "comm" {
 
   depends_on = [
     google_compute_router_interface.comm0,
-    google_compute_router_interface.comm1
+    google_compute_router_interface.comm1,
+    google_network_connectivity_spoke.comm
   ]
 }
 

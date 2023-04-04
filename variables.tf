@@ -1,7 +1,7 @@
 variable "prefix" {
   type = string
   description = "Prefix for all created resources"
-  default = "bm-bit"
+  default = "bm-bip"
 }
 
 variable "region" {

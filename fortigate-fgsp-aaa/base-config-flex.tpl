@@ -5,6 +5,15 @@ MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="license"
+
+
+LICENSE-TOKEN: ${flexvm_token}
+
+--12345
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="config"
 
 config system global
@@ -30,6 +39,12 @@ config system interface
     edit port2
       set mode static
       set ip ${port2_ip}/32
+    next
+    edit port3
+      set dhcp-classless-route-addition enable
+    next
+    edit port4
+      set dhcp-classless-route-addition enable
     next
 end
 config router static
@@ -99,14 +114,5 @@ config system standalone-cluster
 end
 
 ${fgt_config}
-
---12345
-Content-Type: text/plain; charset="us-ascii"
-MIME-Version: 1.0
-Content-Transfer-Encoding: 7bit
-Content-Disposition: attachment; filename="license"
-
-
-LICENSE-TOKEN: ${flexvm_token}
 
 --12345--
